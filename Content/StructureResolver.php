@@ -26,6 +26,7 @@ use Sulu\Component\Content\Document\Behavior\StructureBehavior;
 use Sulu\Component\Content\Document\Extension\ExtensionContainer;
 use Sulu\Component\Content\Document\RedirectType;
 use Sulu\Component\Content\Metadata\StructureMetadata;
+use Sulu\Bundle\HeadlessBundle\Content\StructureResolver\StructureResolverExtensionInterface;
 
 class StructureResolver implements StructureResolverInterface
 {
@@ -49,16 +50,23 @@ class StructureResolver implements StructureResolverInterface
      */
     private $referenceStorePool;
 
+    /**
+     * @var StructureResolverExtensionInterface[]
+     */
+    private iterable $structureResolverExtensions;
+
     public function __construct(
         ContentResolverInterface $contentResolver,
         StructureManagerInterface $structureManager,
         DocumentInspector $documentInspector,
-        ReferenceStorePoolInterface $referenceStorePool
+        ReferenceStorePoolInterface $referenceStorePool,
+        iterable $structureResolverExtensions = []
     ) {
         $this->contentResolver = $contentResolver;
         $this->structureManager = $structureManager;
         $this->documentInspector = $documentInspector;
         $this->referenceStorePool = $referenceStorePool;
+        $this->structureResolverExtensions = $structureResolverExtensions;
     }
 
     /**
@@ -93,7 +101,12 @@ class StructureResolver implements StructureResolverInterface
             $data['content'][$property->getName()] = $contentView->getContent();
             $data['view'][$property->getName()] = $contentView->getView();
         }
+        dump($data);
 
+        foreach ($this->structureResolverExtensions as $structureResolverExtension) {
+            $data[$structureResolverExtension->getKey()] = $structureResolverExtension->resolve($requestedStructure, $locale);
+        }
+        dump($data);
         return $data;
     }
 
